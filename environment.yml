@@ -178,5 +178,4 @@ dependencies:
 - pyct=0.4.6=py_0
 - pyct-core=0.4.6=py_0
 - pyviz_comms=0.7.6=py_0
-prefix: /Users/mm9684/anaconda/envs/testenv2
 
