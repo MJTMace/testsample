@@ -15,4 +15,4 @@ dependencies:
  - pip:
    - binarytree
    - ipympl
-   - git+https://github.com/MJTMace/callhorizons.git 
+   - git+https://github.com/MJTMace/callhorizons.git@get-vectors-feature-branch 
