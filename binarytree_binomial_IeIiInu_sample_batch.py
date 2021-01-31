@@ -350,7 +350,7 @@ def main(scriptArgs):
     freqs = []
     pred_freqs = [] # predicted frequency of particular tree outcomes 
 
-    # Insert the predicted frequency of each  binary tree outcome
+    # Insert the predicted frequency of each  binary tree outcome (pen and paper calculations) 
     # The numeric value following pred_tree_key_ follows the pattern of starting at the left topmost node (excluding root) and going rightward, then down to the next level, ...etc
     dict_tree_pred = {}
     if scriptArgs.k_e_init == 2 and scriptArgs.k_i_init == 1 and scriptArgs.k_nu_init == 1: 
