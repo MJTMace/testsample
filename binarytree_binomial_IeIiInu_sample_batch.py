@@ -4,21 +4,29 @@ import argparse
 import numpy as np
 from scipy.stats import binom
 from binarytree import Node # see https://pypi.org/project/binarytree/ and https://github.com/joowani/binarytree/blob/master/binarytree/__init__.py
-# Note that I've saved a backup of the current binarytree package source code in /Users⁩/mm9684⁩/Documents⁩/PhD_related⁩/binarytree-master_backup_from_github_joowani
+
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D # for legend labels
 import sys
 
 def nodify(k):
-    # Use a function to sort out the string concatenating and then transforming into a float
+    """
+    Format charging events so can be printed nicely with binarytree's Node function
+    """
     # Node method cannot handle non-numbers so I need to hack a way to display the plasma electron, plasma ion, and photoelectron event numbers at each level
     # k = [k_e, k_i, k_nu]
     return float(str(k[0]) + "." + str(k[1]) + str(k[2]) ) # note that if k_e=1, k_i=2, k_nu = 0 then it will read as "1.2" rather than "1.20"
 
-def binomial_prob_multiI(k_arr, R):
-     # Multiple currents
+def binomial_prob_multiI(k_arr, R): 
+    """
+    Works out how to resolve k>1 charging events in time across step
+    Inputs: 
+        k_arr = Number of charging events generated from Poisson distributions for multiple current types for the full timestep
+        R = Random number drawn from uniform probability distribution U[0,1] to compare to the binomial probabilities
+    """
+            
      # Use the drawn uniform number to see how the charging events are split between the parent's 2 child sub-steps
-     # I need to unpack the total number of charging events from the list passed into this function:
+     #Unpack the total number of charging events from the list passed into this function:
     N_e = k_arr[0]
     N_i = k_arr[1]
     N_nu = k_arr[2]
@@ -42,7 +50,6 @@ def binomial_prob_multiI(k_arr, R):
         #R = np.random.uniform(low=0.0, high=1.0) # draw a random number from Uniform probability distribution
         #print("binomial_prob R = ", R, "N = ", N)
         # Initialise 2-element array to store result for [I_e, I_i] number of charging events
-        #k_ctr = [0, 0] # use zero rather than NaN, otherwise Node() complains!
         k_ctr=[99999999999999, 99999999999999, 99999999999999] # use an integer value that would get clearly flagged up if there's a bug in my code
         
         # Check where R falls in the weighted nested Binomial probability distribution
@@ -69,7 +76,7 @@ def binomial_prob_multiI(k_arr, R):
             k_e_ctr+=1 #increment to the next prob range
             start_pt_e = end_pt_e # move start_pt to the next prob range bin's start (which is the end of the previous prob range's bin)
             end_pt_e += (N_e/(N_e+N_i+N_nu))*binom.pmf(k=k_e_ctr, n=N_e , p=0.5) # add on the appropriately weighted prob to update the end point of the probability bin
-            #print("R=", R, "Prob range for k_e = ", k_e_ctr, " is ", start_pt_e , "to ", end_pt_e )
+
         # Store the number of I_e charging events as the 0th element in the list of k events:
         k_ctr[0] = k_e_ctr # note that if R doesn't lie within the I_e weighted range, then k_e_ctr is erroneously set to be N_e but it gets corrected below
         k_ctr[1] = 0 # If an electron event has been chosen then the ion event must be zero
@@ -95,19 +102,14 @@ def binomial_prob_multiI(k_arr, R):
                 k_ctr[0]=0; k_ctr[1]=1; k_ctr[2]=0
                 return(k_ctr)
             
-            #print(f"k_ctr = {k_ctr}")
-            #print(f"start_pt_i = {start_pt_i}, end_pt_i = {end_pt_i}")
             while ((R >= end_pt_i) and (k_i_ctr < N_i)):
                 #print(f"In while ((R >= end_pt_i) and (k_i_ctr < N_i)) ")
                 k_i_ctr+=1 #increment to the next prob range
                 start_pt_i = end_pt_i # move start_pt to the next prob range bin's start (which is the end of the previous prob range's bin)
                 end_pt_i += (N_i/(N_e+N_i+N_nu))*binom.pmf(k=k_i_ctr, n=N_i , p=0.5) # add on the appropriately weighted prob to update the end point of the probability bin
-                #print("R=", R, "Prob range for k_i = ", k_i_ctr, " is ", start_pt_i , "to ", end_pt_i )
+
             # Store the number of I_i charging events as the 1st element in the list of k events:
             k_ctr[1] = k_i_ctr
-            #print(f"k_ctr = {k_ctr}")
-       ##print("and while_ctr = ", while_ctr)
-       #print("R lies in bin where k = ", k_ctr)
         
             # Then check whether it's an I_nu type event (only do this if R has not been found to lie inside I_e or I_i probability ranges)
             if R > end_pt_i: # only need to check the I_i prob ranges if R has proven to lie outside the I_e prob ranges (note the indentation)
@@ -123,11 +125,9 @@ def binomial_prob_multiI(k_arr, R):
                 end_pt_nu = start_pt_nu + (N_nu/(N_e+N_i+N_nu))*binom.pmf(k=k_nu_ctr, n=N_nu, p=0.5)
                  # Bug fix: if there happens to be one ion charging event and R does not fall inside any of the k_e events then R must fall inside the k_i event prob range
                 if N_nu == 1 and R < end_pt_nu: 
-                    #print("In if N_nu == 1")
                     k_ctr[0]=0; k_ctr[1]=0; k_ctr[2]=1
                     return(k_ctr)
                 
-                #print(f"k_ctr = {k_ctr}")
                 #print(f"start_pt_nu = {start_pt_nu}, end_pt_nu = {end_pt_nu}")
                 while ((R >= end_pt_nu) and (k_nu_ctr < N_nu)):
                     #print(f"In while ((R >= end_pt_nu) and (k_nu_ctr < N_nu)) ")
@@ -135,6 +135,7 @@ def binomial_prob_multiI(k_arr, R):
                     start_pt_nu = end_pt_nu # move start_pt to the next prob range bin's start (which is the end of the previous prob range's bin)
                     end_pt_nu += (N_nu/(N_e+N_i+N_nu))*binom.pmf(k=k_nu_ctr, n=N_nu , p=0.5) # add on the appropriately weighted prob to update the end point of the probability bin
                     #print("R=", R, "Prob range for k_i = ", k_i_ctr, " is ", start_pt_i , "to ", end_pt_i )
+                
                 # Store the number of I_i charging events as the 1st element in the list of k events:
                 k_ctr[2] = k_nu_ctr
                 #print(f"k_ctr = {k_ctr}")
@@ -144,7 +145,13 @@ def binomial_prob_multiI(k_arr, R):
 
 def walker(value_arr, level=0, tree=Node(0)): 
     #print("Inside walker()")
-    # It was necessary to pass the level_1_switch to the walker() function explicitly for my unit test toy example
+    """
+    Binary tree walker. Recursively splits timestep in half and keeps track of which level it is on, until the base case of k = 0 or 1 is reached.
+    Inputs:
+        value = number of charging events at a particular tree level
+        level = depth of tree 
+        tree = object to be printed for visual check
+    """
     
     if ( (value_arr[0]==1 and value_arr[1]==0 and value_arr[2]==0) or (value_arr[0] == 0 and value_arr[1] == 1 and value_arr[2]==0) or (value_arr[0] == 0 and value_arr[1] == 0 and value_arr[2]==1) or
         (value_arr[0]==0 and value_arr[1]==0 and value_arr[2]==0) or level == scriptArgs.level_lim): # base case (leaf nodes have no children)
@@ -153,8 +160,6 @@ def walker(value_arr, level=0, tree=Node(0)):
         tree.right = None
         return [(value_arr, level)], tree # store the leaf node value (ie k=0 or k=1) and its corresponding level as tuple-element of list
     
-    #np.random.seed(3*level+5)
-
     # Generate a random number from uniform prob distribution:
     R = np.random.uniform(low=0.0, high=1.0) 
     
@@ -168,6 +173,7 @@ def walker(value_arr, level=0, tree=Node(0)):
 
     #print(f"LEVEL = {level} R={R},  substep1 = {substep1_arr}")
     #print(f"substep2 = {substep2_arr}")
+    
     # Define the left and child nodes:
     tree.left = Node(nodify(substep1_arr)) # use my hacky nodify function as Node cannot handle non-numbers (e.g. arrays)
     tree.right = Node(nodify(substep2_arr))
@@ -177,6 +183,7 @@ def walker(value_arr, level=0, tree=Node(0)):
     
     #print(f"walker level{level} called with value {value_arr} splits into {substep1_arr} and {substep2_arr} as R = {R}")
     #print(f" left subtree a_arr = {a_arr}, right subtree b_arr = {b_arr}")
+    
     # Reconfigure the binary tree to update:
     tree.left = tree_l
     tree.right = tree_r
@@ -184,10 +191,7 @@ def walker(value_arr, level=0, tree=Node(0)):
 
 def main(scriptArgs):
     lev = 0
-
-    # Initialise counters to keep track of frequency of binary tree outcome occurrence
-    # In order to handle 3 different types of current, I had to adapt the following notation (for the single current case): "The numeric value following ctr_ follows the pattern of starting at the left topmost leaf node (excluding root) and going rightward, then down to the next level, ...etc " so that:
-    # The numeric values following ctr_follows the pattern of starting at the left topmost leaf noe and going rightward... where the first value corresponds to I_e and the second value corresponds to I_i
+    # In order to handle 3 different types of current, the numeric values following ctr_follows the pattern of starting at the left topmost leaf noe and going rightward... where the first value corresponds to I_e, the second value corresponds to I_i, the third value corresponds to I_nu
     # where I suffix underscore with letter to indicate what level : a = level 1, b = level 2 , c = level 3 , ... 
      
     # NOTE THAT ctr211_ refers to an initial number of charging events k_e=2, k_i=1, k_nu=1
@@ -206,9 +210,9 @@ def main(scriptArgs):
             ctr211_a010_b000_b201 = 0; ctr211_a010_b100_b101 = 0; ctr211_a010_b200_b001 = 0; ctr211_a010_b001_b200 = 0
             ctr211_a001_b000_b210 = 0; ctr211_a001_b100_b110 = 0; ctr211_a001_b200_b010 = 0; ctr211_a001_b010_b200 = 0
         else:
-             print("I have only written test up to level 2!")
+             print("only written test up to level 2!")
     else:
-        print("I have only written tests for k_init = [2,1,1]! ")
+        print("only written tests for k_init = [2,1,1]! ")
         sys.exit(0)
     # Initialise  dictionary to store tree output results:
     dict_tree_rand = {}
@@ -341,10 +345,6 @@ def main(scriptArgs):
     #print(dict_tree_rand)
   
     fig,ax = plt.subplots(figsize=(40,10))
-    #fig.canvas.layout.width = '1500px' #1500
-    #fig.canvas.layout.height = '500px'
-    #freqs = np.array([10,ctr_11,30,40])
-    #my_xticks = ['A', tree, 'C', "D"]
     
     my_xticks = []
     freqs = []
@@ -405,11 +405,11 @@ def main(scriptArgs):
     ax.set_xticks(x_placeholder) # set the tick locations
     ax.bar(x_placeholder-0.15, freqs, color = "#657b83", width=0.3)
     ax.bar(x_placeholder+0.15, pred_freqs, color = "k", width=0.3)
-    ax.set_xticklabels(np.array(my_xticks))
+    ax.set_xticklabels(np.array(my_xticks), fontsize=16)
     ax.tick_params(axis="both", which ='major', length = 10)
     ax.set_ylim([0,0.1])
-    ax.set_xlabel("Binary tree output")
-    ax.set_ylabel("Normalised frequency")
+    ax.set_xlabel("Binary tree output", fontsize=18)
+    ax.set_ylabel("Normalised frequency", fontsize=18)
     #ax.set_yscale('log')
     # Create custom artsits for legend:
     #legend_elements = [Line2D([0], [0], color='#2d5986', lw=6, label=f'{scriptArgs.N_runs} random runs'),
@@ -419,9 +419,7 @@ def main(scriptArgs):
     fig.subplots_adjust(bottom=0.35)
     # Useful ref: https://jakevdp.github.io/PythonDataScienceHandbook/04.10-customizing-ticks.html
     #fig.suptitle(r"Initial number of charging events, [$k_e, k_i, k_\nu$]  = " + f"[{scriptArgs.k_e_init}, {scriptArgs.k_i_init}, {scriptArgs.k_nu_init}], outcomes considered up to level {scriptArgs.level_lim}")
-    #fig.savefig("/Users/mm9684/Documents/PhD_related/UoB_thesis/chap_varChar/methods_and_lit/imgs/barplot_binarytree_ke2ki1knu1_lev3.svg")
-    #fig.savefig("/home/mm9684/phd_related/sims_notebooks/thesis/figures/VariableChargeChap/barplot_binarytree_ke2ki1knu1_lev3.svg")
-
+  
 if __name__ == '__main__':
         #First create an argument parser argument:
         parser = argparse.ArgumentParser(description='Plot out frequency of outcomes for each possible binary tree given some initial charging events')
