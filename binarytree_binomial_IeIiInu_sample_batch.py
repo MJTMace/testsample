@@ -390,9 +390,9 @@ def main(scriptArgs):
             dict_tree_pred[pred_tree_key211_a001_b200_b010] = 1/24
             dict_tree_pred[pred_tree_key211_a001_b010_b200] = 1/12
         else:
-            print("I've only worked out tests for binary tree outcomes for k_e = 1, k_i = 2, k_nu = 1 up to level 2!")
+            print("only worked out tests for binary tree outcomes for k_e = 1, k_i = 2, k_nu = 1 up to level 2!")
     else: 
-        print("I've only written tests for k = [2,1,1] ") 
+        print("only written tests for k = [2,1,1] ") 
     # Sort out lists of results:
     for key,value in dict_tree_rand.items():
         #print(key,value)
