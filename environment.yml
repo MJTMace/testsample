@@ -15,4 +15,4 @@ dependencies:
  - pip:
    - binarytree
    - ipympl
-   - callhorizons 
+   - git+https://github.com/MJTMace/callhorizons.git 
