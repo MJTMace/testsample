@@ -15,4 +15,4 @@ dependencies:
  - pip:
    - binarytree
    - ipympl
- 
+   - callhorizons 
