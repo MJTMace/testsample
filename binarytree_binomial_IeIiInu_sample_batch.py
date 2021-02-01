@@ -47,8 +47,6 @@ def binomial_prob_multiI(k_arr, R):
             k_ctr[0] = 0; k_ctr[1] = 0; k_ctr[2] = 1
     else:
         #print(f"In else clause, R = {R}")
-        #R = np.random.uniform(low=0.0, high=1.0) # draw a random number from Uniform probability distribution
-        #print("binomial_prob R = ", R, "N = ", N)
         # Initialise 2-element array to store result for [I_e, I_i] number of charging events
         k_ctr=[99999999999999, 99999999999999, 99999999999999] # use an integer value that would get clearly flagged up if there's a bug in my code
         
@@ -113,7 +111,6 @@ def binomial_prob_multiI(k_arr, R):
         
             # Then check whether it's an I_nu type event (only do this if R has not been found to lie inside I_e or I_i probability ranges)
             if R > end_pt_i: # only need to check the I_i prob ranges if R has proven to lie outside the I_e prob ranges (note the indentation)
-                #print("In if R > end_pt_e ")
                 k_ctr[0] = 0 #if the code enters this if block then know that the plasma electron current has not been picked and so I need to overwrite with zero
                 k_ctr[1] = 0 # also ensure that the plasma ion current event is zero in the case of a photoelectron event
                
@@ -344,7 +341,7 @@ def main(scriptArgs):
     #print("counters : ", ctr2_02, ctr2_11, ctr2_20)
     #print(dict_tree_rand)
   
-    fig,ax = plt.subplots(figsize=(40,10))
+    fig,ax = plt.subplots(figsize=(70,15))
     
     my_xticks = []
     freqs = []
@@ -405,11 +402,11 @@ def main(scriptArgs):
     ax.set_xticks(x_placeholder) # set the tick locations
     ax.bar(x_placeholder-0.15, freqs, color = "#657b83", width=0.3)
     ax.bar(x_placeholder+0.15, pred_freqs, color = "k", width=0.3)
-    ax.set_xticklabels(np.array(my_xticks), fontsize=16)
+    ax.set_xticklabels(np.array(my_xticks), fontsize=20)
     ax.tick_params(axis="both", which ='major', length = 10)
     ax.set_ylim([0,0.1])
-    ax.set_xlabel("Binary tree output", fontsize=18)
-    ax.set_ylabel("Normalised frequency", fontsize=18)
+    ax.set_xlabel("Binary tree output", fontsize=24)
+    ax.set_ylabel("Normalised frequency", fontsize=24)
     #ax.set_yscale('log')
     # Create custom artsits for legend:
     #legend_elements = [Line2D([0], [0], color='#2d5986', lw=6, label=f'{scriptArgs.N_runs} random runs'),
@@ -417,7 +414,8 @@ def main(scriptArgs):
     #ax.legend(handles=legend_elements, loc='upper right')
 
     fig.subplots_adjust(bottom=0.35)
-    # Useful ref: https://jakevdp.github.io/PythonDataScienceHandbook/04.10-customizing-ticks.html
+    plt.setp(ax.get_xticklabels(), fontsize=12)
+    plt.setp(ax.get_yticklabels(), fontsize=16)   
     #fig.suptitle(r"Initial number of charging events, [$k_e, k_i, k_\nu$]  = " + f"[{scriptArgs.k_e_init}, {scriptArgs.k_i_init}, {scriptArgs.k_nu_init}], outcomes considered up to level {scriptArgs.level_lim}")
   
 if __name__ == '__main__':
@@ -425,12 +423,11 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser(description='Plot out frequency of outcomes for each possible binary tree given some initial charging events')
     
         #Filling an ArgumentParser with information about program arguments:
-    # Provide both the single & double dash ways to have flags
         parser.add_argument('-levLim', '--level_lim', help='Set max recursion lim', required=True, type=int) 
         parser.add_argument('-nrun', '--N_runs', help='Set number of runs', required=True, type=int) 
         parser.add_argument('-keinit', '--k_e_init', help='Set initial number of plasma electron current charging events', required=True, type=int) 
         parser.add_argument('-kiinit', '--k_i_init', help='Set initial number of plasma ion current charging events', required=True, type=int) 
         parser.add_argument('-knuinit', '--k_nu_init', help='Set initial number of photoemission current charging events', required=True, type=int) 
-        # The object you get back from parse_args() is a 'Namespace' object: An object whose member variables are named after your command-line arguments:
+        # The object from parse_args() is a 'Namespace' object - An object whose member variables are named after your command-line arguments:
         scriptArgs = parser.parse_args()
         main(scriptArgs)
